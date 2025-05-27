@@ -4,3 +4,4 @@ openpyxl
 plotly
 Pillow
 pdfkit
+kaleido
