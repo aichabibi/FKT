@@ -1088,8 +1088,8 @@ def generate_dashboard_pdf(progress_metrics, doughnut_data, fig_conformity=None,
 
     # Partie 2 : Génération du PDF avec wkhtmltopdf
     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
-        pdfkit_config = pdfkit.configuration(wkhtmltopdf=r"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
-        pdfkit.from_string(full_html, tmpfile.name, configuration=pdfkit_config)
+        pdfkit_config = None
+        pdfkit.from_string(full_html, tmpfile.name) if pdfkit_config is None else pdfkit.from_string(full_html, tmpfile.name, configuration=pdfkit_config)
         return tmpfile.name
 
 
