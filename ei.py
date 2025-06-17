@@ -498,17 +498,21 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
     }
     
     # Créez un ensemble de données pour le doughnut chart
+    from collections import Counter
+
+    main_color_counts = Counter(main_colors)
     doughnut_data = {
         "labels": [color_map[color]['desc'] for color in color_map],
         "datasets": [
             {
                 "label": "FKT par statut",
-                "data": [sum(color_summary[header].get(color, 0) for header in [h for _, h in réglage_cols]) for color in color_map],
+                "data": [main_color_counts.get(color, 0) for color in color_map],
                 "backgroundColor": [color_map[color]['hex'] for color in color_map],
                 "hoverOffset": 4
             }
         ]
     }
+
     
     # Utiliser actual_fkt_count au lieu de total_rows pour les FKT réelles
     return (df, color_summary, conforme_summary, controlled_summary, réglage_cols, amortissement_cols, 
