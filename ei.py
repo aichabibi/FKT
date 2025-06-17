@@ -334,7 +334,7 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                 last_valid_row = row_idx
                 break
                 
-        row_color_candidates = []  # ← 🧠 Initialise la liste avant usage
+        
 
         if has_fkt_data:
             actual_fkt_count += 1
@@ -351,7 +351,7 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         
         total_rows += 1
         row_data = {}
-        
+        row_color_candidates = []
         # Extraire les données et couleurs en une seule passe
         row_values = []
         row_colors = []
