@@ -339,6 +339,8 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         if has_fkt_data:
             actual_fkt_count += 1
         
+            row_color_candidates = []  # ✅ Initialisation avant utilisation
+        
             main_color = 'FFFFFF'
             for c in row_color_candidates:
                 if c != 'FFFFFF':
@@ -346,13 +348,13 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                     break
             main_colors.append(main_color)
 
+
         total_rows += 1
         row_data = {}
         
         # Initialiser les listes à l'intérieur du traitement de ligne
         row_values = []
         row_colors = []
-        row_color_candidates = []  # 🟩 CORRECT ici
         
         for cell in row:
             row_values.append(cell.value)
