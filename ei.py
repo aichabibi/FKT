@@ -325,6 +325,7 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         if all((cell is None or str(cell.value).strip() == "") for cell in row):
             continue
 
+            
         # Vérifier si la ligne contient des données FKT réelles
         has_fkt_data = False
         for col_idx, _ in réglage_cols:
@@ -332,31 +333,39 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                 has_fkt_data = True
                 last_valid_row = row_idx
                 break
-
+                
+        if has_fkt_data:
+            actual_fkt_count += 1
+        
         total_rows += 1
         row_data = {}
-
-        # Initialiser les listes à l'intérieur du traitement de ligne
+        
+        # Extraire les données et couleurs en une seule passe
         row_values = []
         row_colors = []
-
+        
         for cell in row:
             row_values.append(cell.value)
+
             try:
+                # Meilleure compatibilité : on tente d'abord fgColor
                 fill_color = cell.fill.fgColor if cell.fill.fgColor and cell.fill.fgColor.rgb else cell.fill.start_color
                 color_code = safe_extract_hex(fill_color)
+
+
             except:
                 color_code = 'FFFFFF'
+
             row_colors.append(get_standardized_color(color_code))
 
         # Construire un dictionnaire pour la ligne
         for i, header in enumerate(headers):
             if i < len(row_values):
                 row_data[header] = row_values[i]
-
+        
         # Ajouter aux données
         data.append(row_data)
-
+        
         # Traiter les colonnes de réglage
         row_color_candidates = []
 
@@ -376,41 +385,44 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                 # 🆕 on ajoute cette couleur à la liste des couleurs candidates de la ligne
                 row_color_candidates.append(standardized_color)
 
-        # ✅ Maintenant qu'on a collecté toutes les couleurs : on peut déterminer la couleur principale
-        main_color = 'FFFFFF'
+        # Choisir une seule couleur dominante pour cette ligne
+        main_color = 'FFFFFF'  # par défaut
         for c in row_color_candidates:
             if c != 'FFFFFF':
                 main_color = c
                 break
-        if has_fkt_data:
-            actual_fkt_count += 1
-            main_colors.append(main_color)
-
+        main_colors.append(main_color)
+        
         # Traiter les colonnes d'amortissement
-        conforme_found = False
-        conforme_reglage_col = None
-
+        conforme_found = False  # Pour suivre si une valeur conforme a été trouvée dans cette ligne
+        conforme_reglage_col = None  # Pour suivre quelle colonne de réglage est associée à la conformité
+        
         for col_idx, header in amortissement_cols:
             if col_idx < len(row_values):
                 value = row_values[col_idx]
-
+                
+                # Stocker les valeurs d'amortissement pour analyse
                 if value is not None:
                     conformite_details[header]["values"].append(str(value))
-
+                
                 # Vérifier si des FKT ont été contrôlées pour cette ligne
                 fkt_controlled = False
                 for reglage_col, reglage_header in réglage_cols:
                     if reglage_col < len(row_colors):
                         reglage_color = get_standardized_color(row_colors[reglage_col])
+                        # 00B0F0 = FKT contrôlée sur Plan, 92CDDC = FKT contrôlée sur Terrain
                         if reglage_color in ['00B0F0', '92CDDC', '92D050']:
                             fkt_controlled = True
-                            conforme_reglage_col = (reglage_col, reglage_header)
+                            conforme_reglage_col = (reglage_col, reglage_header)  # Stocker la colonne de réglage pour cette conformité
                             break
-
+                
+                # Comptage seulement pour les FKT contrôlées
+                # Nouvelle version : on compte toutes les lignes renseignées, même sans contrôle
                 conformite = is_conforme(value)
 
                 if conformite is not None:
-                    controlled_summary[header] += 1
+                    controlled_summary[header] += 1  # Compter comme FKT renseignée
+
                     if conformite is True:
                         conforme_summary[header] += 1
 
@@ -418,21 +430,25 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                 else:
                     conformite_details[header]["details"].append({"value": str(value), "conforme": None})
 
-                for reglage_col, reglage_header in réglage_cols:
-                    if reglage_col < len(row_values):
-                        reglage_value = row_values[reglage_col]
-                        reglage_color = row_colors[reglage_col]
-                        reglage_color = get_standardized_color(reglage_color)
 
-                        if reglage_value == 1 and reglage_color == 'FFFFFF':
-                            if reglage_header not in reglage_conforme[header]:
-                                reglage_conforme[header][reglage_header] = 0
-                            reglage_conforme[header][reglage_header] += 1
-
+                    # Comptage par colonne de réglage
+                    for reglage_col, reglage_header in réglage_cols:
+                        if reglage_col < len(row_values):
+                            reglage_value = row_values[reglage_col]
+                            reglage_color = row_colors[reglage_col]
+                            
+                            # Standardiser la couleur
+                            reglage_color = get_standardized_color(reglage_color)
+                            
+                            if reglage_value == 1 and reglage_color == 'FFFFFF':
+                                if reglage_header not in reglage_conforme[header]:
+                                    reglage_conforme[header][reglage_header] = 0
+                                reglage_conforme[header][reglage_header] += 1
+        
+        # Si une valeur conforme a été trouvée dans cette ligne, incrémenter le compteur pour la colonne de réglage associée
         if conforme_found and conforme_reglage_col is not None:
             _, reglage_header = conforme_reglage_col
             conforme_par_reglage[reglage_header] += 1
-
     
     # Conversion en DataFrame
     df = pd.DataFrame(data)
@@ -481,25 +497,17 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         ]
     }
     
-    from collections import Counter
-
-    # ✅ main_colors contient une seule couleur par FKT réelle
-    # On filtre les lignes réellement valides (déjà fait implicitement par actual_fkt_count)
-    main_color_counts = Counter(main_colors)
-
-    # Génère le doughnut_data basé sur ces couleurs dominantes par ligne
     doughnut_data = {
         "labels": [color_map[color]['desc'] for color in color_map],
         "datasets": [
             {
                 "label": "FKT par statut",
-                "data": [main_color_counts.get(color, 0) for color in color_map],
+                "data": [sum(color_summary[header].get(color, 0) for header in [h for _, h in réglage_cols]) for color in color_map],
                 "backgroundColor": [color_map[color]['hex'] for color in color_map],
                 "hoverOffset": 4
             }
         ]
     }
-
 
     
     # Utiliser actual_fkt_count au lieu de total_rows pour les FKT réelles
