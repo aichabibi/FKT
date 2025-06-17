@@ -497,17 +497,25 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         ]
     }
     
+    from collections import Counter
+
+    # ✅ main_colors contient une seule couleur par FKT réelle
+    # On filtre les lignes réellement valides (déjà fait implicitement par actual_fkt_count)
+    main_color_counts = Counter(main_colors)
+
+    # Génère le doughnut_data basé sur ces couleurs dominantes par ligne
     doughnut_data = {
         "labels": [color_map[color]['desc'] for color in color_map],
         "datasets": [
             {
                 "label": "FKT par statut",
-                "data": [sum(color_summary[header].get(color, 0) for header in [h for _, h in réglage_cols]) for color in color_map],
+                "data": [main_color_counts.get(color, 0) for color in color_map],
                 "backgroundColor": [color_map[color]['hex'] for color in color_map],
                 "hoverOffset": 4
             }
         ]
     }
+
 
     
     # Utiliser actual_fkt_count au lieu de total_rows pour les FKT réelles
