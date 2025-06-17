@@ -334,6 +334,8 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                 last_valid_row = row_idx
                 break
                 
+        row_color_candidates = []  # ← 🧠 Initialise la liste avant usage
+
         if has_fkt_data:
             actual_fkt_count += 1
         
@@ -344,6 +346,7 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                     main_color = c
                     break
             main_colors.append(main_color)
+
 
         
         total_rows += 1
