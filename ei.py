@@ -339,7 +339,6 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         if has_fkt_data:
             actual_fkt_count += 1
         
-            # ➕ Ajouter la couleur dominante uniquement pour les lignes FKT valides
             main_color = 'FFFFFF'
             for c in row_color_candidates:
                 if c != 'FFFFFF':
@@ -347,28 +346,23 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
                     break
             main_colors.append(main_color)
 
-
-        
         total_rows += 1
         row_data = {}
-        row_color_candidates = []
-        # Extraire les données et couleurs en une seule passe
+        
+        # Initialiser les listes à l'intérieur du traitement de ligne
         row_values = []
         row_colors = []
+        row_color_candidates = []  # 🟩 CORRECT ici
         
         for cell in row:
             row_values.append(cell.value)
-
             try:
-                # Meilleure compatibilité : on tente d'abord fgColor
                 fill_color = cell.fill.fgColor if cell.fill.fgColor and cell.fill.fgColor.rgb else cell.fill.start_color
                 color_code = safe_extract_hex(fill_color)
-
-
             except:
                 color_code = 'FFFFFF'
-
             row_colors.append(get_standardized_color(color_code))
+
 
         # Construire un dictionnaire pour la ligne
         for i, header in enumerate(headers):
