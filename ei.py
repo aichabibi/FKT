@@ -337,6 +337,15 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
         if has_fkt_data:
             actual_fkt_count += 1
         
+            # ➕ Ajouter la couleur dominante uniquement pour les lignes FKT valides
+            main_color = 'FFFFFF'
+            for c in row_color_candidates:
+                if c != 'FFFFFF':
+                    main_color = c
+                    break
+            main_colors.append(main_color)
+
+        
         total_rows += 1
         row_data = {}
         
@@ -384,14 +393,6 @@ def load_targeted_data(file_bytes, sheet_name, start_row=None, auto_detect_heade
 
                 # 🆕 on ajoute cette couleur à la liste des couleurs candidates de la ligne
                 row_color_candidates.append(standardized_color)
-
-        # Choisir une seule couleur dominante pour cette ligne
-        main_color = 'FFFFFF'  # par défaut
-        for c in row_color_candidates:
-            if c != 'FFFFFF':
-                main_color = c
-                break
-        main_colors.append(main_color)
         
         # Traiter les colonnes d'amortissement
         conforme_found = False  # Pour suivre si une valeur conforme a été trouvée dans cette ligne
